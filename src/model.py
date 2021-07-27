@@ -12,6 +12,7 @@ class DRIT(nn.Module):
     self.nz = 8
     self.concat = opts.concat
     self.no_ms = opts.no_ms
+    # self.opts = opts
 
     # discriminators
     if opts.dis_scale > 1:
@@ -258,7 +259,7 @@ class DRIT(nn.Module):
 
   def backward_D(self, netD, real, fake):
     pred_fake = netD.forward(fake.detach())
-    pred_real = netD.forward(real)
+    pred_real = netD.forward(real.detach())
     loss_D = 0
     for it, (out_a, out_b) in enumerate(zip(pred_fake, pred_real)):
       out_fake = nn.functional.sigmoid(out_a)
@@ -291,16 +292,18 @@ class DRIT(nn.Module):
     self.enc_a_opt.zero_grad()
     self.gen_opt.zero_grad()
     self.backward_EG()
+    self.backward_G_alone()   # backward_G_alone here to accumulate gradient together before update
     self.enc_c_opt.step()
     self.enc_a_opt.step()
     self.gen_opt.step()
 
     # update G, Ec
-    self.enc_c_opt.zero_grad()
-    self.gen_opt.zero_grad()
-    self.backward_G_alone()
-    self.enc_c_opt.step()
-    self.gen_opt.step()
+    # self.enc_c_opt.zero_grad()
+    # self.gen_opt.zero_grad()
+    # # self.forward()                   # must forward second time before update for new pytorch version
+    # self.backward_G_alone()
+    # self.enc_c_opt.step()
+    # self.gen_opt.step()
 
   def backward_EG(self):
     # content Ladv for generator
@@ -356,6 +359,11 @@ class DRIT(nn.Module):
 
   def backward_G_GAN_content(self, data):
     outs = self.disContent.forward(data)
+    # model = networks.Dis_content()
+    # model.load_state_dict(self.disContent.state_dict())
+    # model.cuda(self.gpu)
+    # outs = model.forward(data)
+
     for out in outs:
       outputs_fake = nn.functional.sigmoid(out)
       all_half = 0.5*torch.ones((outputs_fake.size(0))).cuda(self.gpu)
@@ -364,6 +372,14 @@ class DRIT(nn.Module):
 
   def backward_G_GAN(self, fake, netD=None):
     outs_fake = netD.forward(fake)
+    # if self.opts.dis_scale > 1:
+    #   model = networks.MultiScaleDis(self.opts.input_dim_a, self.opts.dis_scale, norm=self.opts.dis_norm, sn=self.opts.dis_spectral_norm)
+    # else:
+    #   model = networks.Dis(self.opts.input_dim_a, norm=self.opts.dis_norm, sn=self.opts.dis_spectral_norm)
+    # model.load_state_dict(netD.state_dict())
+    # model.cuda(self.gpu)
+    # outs_fake = model.forward(fake)
+
     loss_G = 0
     for out_a in outs_fake:
       outputs_fake = nn.functional.sigmoid(out_a)
@@ -395,6 +411,7 @@ class DRIT(nn.Module):
       loss_z_L1_b = torch.mean(torch.abs(self.z_attr_random_b - self.z_random)) * 10
 
     loss_z_L1 = loss_z_L1_a + loss_z_L1_b + loss_G_GAN2_A + loss_G_GAN2_B
+
     if not self.no_ms:
       loss_z_L1 += (loss_G_GAN2_A2 + loss_G_GAN2_B2)
       loss_z_L1 += (loss_lz_AB + loss_lz_BA)
@@ -409,6 +426,7 @@ class DRIT(nn.Module):
     else:
       self.gan2_loss_a = loss_G_GAN2_A.item()
       self.gan2_loss_b = loss_G_GAN2_B.item()
+
   def update_lr(self):
     self.disA_sch.step()
     self.disB_sch.step()
