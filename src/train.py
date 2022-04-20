@@ -58,8 +58,8 @@ def main():
       print('total_it: %d (ep %d, it %d), lr %08f' % (total_it, ep, it, model.gen_opt.param_groups[0]['lr']))
       total_it += 1
       if total_it >= max_it:
-        saver.write_img(-1, model)
-        saver.write_model(-1, model)
+        saver.write_img(-999, model)
+        saver.write_model(-999, total_it, model)
         break
 
     if total_it >= max_it:

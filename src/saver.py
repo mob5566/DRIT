@@ -58,9 +58,9 @@ class Saver():
       assembled_images = model.assemble_outputs()
       img_filename = '%s/gen_%05d.jpg' % (self.image_dir, ep)
       torchvision.utils.save_image(assembled_images / 2 + 0.5, img_filename, nrow=1)
-    elif ep == -1:
+    elif ep == -999:
       assembled_images = model.assemble_outputs()
-      img_filename = '%s/gen_last.jpg' % (self.image_dir, ep)
+      img_filename = '%s/gen_last.jpg' % (self.image_dir)
       torchvision.utils.save_image(assembled_images / 2 + 0.5, img_filename, nrow=1)
 
   # save model
@@ -68,6 +68,6 @@ class Saver():
     if (ep + 1) % self.model_save_freq == 0:
       print('--- save the model @ ep %d ---' % (ep))
       model.save('%s/%05d.pth' % (self.model_dir, ep), ep, total_it)
-    elif ep == -1:
+    elif ep == -999:
       model.save('%s/last.pth' % self.model_dir, ep, total_it)
 
