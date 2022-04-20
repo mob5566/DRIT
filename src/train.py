@@ -33,7 +33,7 @@ def main():
 
   # train
   print('\n--- train ---')
-  max_it = 500000
+  max_it = opts.max_it
   for ep in range(ep0, opts.n_ep):
     for it, (images_a, images_b) in enumerate(train_loader):
       if images_a.size(0) != opts.batch_size or images_b.size(0) != opts.batch_size:
@@ -61,6 +61,9 @@ def main():
         saver.write_img(-1, model)
         saver.write_model(-1, model)
         break
+
+    if total_it >= max_it:
+      break
 
     # decay learning rate
     if opts.n_ep_decay > -1:
