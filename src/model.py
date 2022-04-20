@@ -30,8 +30,10 @@ class DRIT(nn.Module):
     # encoders
     self.enc_c = networks.E_content(opts.input_dim_a, opts.input_dim_b)
     if self.concat:
-      self.enc_a = networks.E_attr_concat(opts.input_dim_a, opts.input_dim_b, self.nz, \
-          norm_layer=None, nl_layer=networks.get_non_linearity(layer_type='lrelu'))
+      self.enc_a = networks.E_attr_concat(
+          opts.input_dim_a, opts.input_dim_b, self.nz, norm_layer=None,
+          nl_layer=networks.get_non_linearity(layer_type='lrelu')
+      )
     else:
       self.enc_a = networks.E_attr(opts.input_dim_a, opts.input_dim_b, self.nz)
 

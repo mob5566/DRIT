@@ -268,11 +268,14 @@ class G(nn.Module):
     self.decA4 = MisINSResBlock(tch, tch_add)
 
     decA5 = []
-    decA5 += [ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)]
-    tch = tch//2
-    decA5 += [ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)]
-    tch = tch//2
-    decA5 += [nn.ConvTranspose2d(tch, output_dim_a, kernel_size=1, stride=1, padding=0)]
+    decA5 += [ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                     padding=1, output_padding=1)]
+    tch = tch // 2
+    decA5 += [ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                     padding=1, output_padding=1)]
+    tch = tch // 2
+    decA5 += [nn.ConvTranspose2d(tch, output_dim_a, kernel_size=1, stride=1,
+                                 padding=0)]
     decA5 += [nn.Tanh()]
     self.decA5 = nn.Sequential(*decA5)
 
@@ -282,11 +285,14 @@ class G(nn.Module):
     self.decB3 = MisINSResBlock(tch, tch_add)
     self.decB4 = MisINSResBlock(tch, tch_add)
     decB5 = []
-    decB5 += [ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)]
-    tch = tch//2
-    decB5 += [ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)]
-    tch = tch//2
-    decB5 += [nn.ConvTranspose2d(tch, output_dim_b, kernel_size=1, stride=1, padding=0)]
+    decB5 += [ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                     padding=1, output_padding=1)]
+    tch = tch // 2
+    decB5 += [ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                     padding=1, output_padding=1)]
+    tch = tch // 2
+    decB5 += [nn.ConvTranspose2d(tch, output_dim_b, kernel_size=1, stride=1,
+                                 padding=0)]
     decB5 += [nn.Tanh()]
     self.decB5 = nn.Sequential(*decB5)
 
@@ -302,7 +308,6 @@ class G(nn.Module):
         nn.Linear(256, 256),
         nn.ReLU(inplace=True),
         nn.Linear(256, tch_add*4))
-    return
 
   def forward_a(self, x, z):
     z = self.mlpA(z)
@@ -339,13 +344,16 @@ class G_concat(nn.Module):
     for i in range(0, 3):
       decA1 += [INSResBlock(tch, tch)]
     tch = tch + self.nz
-    decA2 = ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)
-    tch = tch//2
+    decA2 = ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                   padding=1, output_padding=1)
+    tch = tch // 2
     tch = tch + self.nz
-    decA3 = ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)
-    tch = tch//2
+    decA3 = ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                   padding=1, output_padding=1)
+    tch = tch // 2
     tch = tch + self.nz
-    decA4 = [nn.ConvTranspose2d(tch, output_dim_a, kernel_size=1, stride=1, padding=0)]+[nn.Tanh()]
+    decA4 = [nn.ConvTranspose2d(tch, output_dim_a, kernel_size=1, stride=1,
+                                padding=0)] + [nn.Tanh()]
     self.decA1 = nn.Sequential(*decA1)
     self.decA2 = nn.Sequential(*[decA2])
     self.decA3 = nn.Sequential(*[decA3])
@@ -356,13 +364,16 @@ class G_concat(nn.Module):
     for i in range(0, 3):
       decB1 += [INSResBlock(tch, tch)]
     tch = tch + self.nz
-    decB2 = ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)
-    tch = tch//2
+    decB2 = ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                   padding=1, output_padding=1)
+    tch = tch // 2
     tch = tch + self.nz
-    decB3 = ReLUINSConvTranspose2d(tch, tch//2, kernel_size=3, stride=2, padding=1, output_padding=1)
-    tch = tch//2
+    decB3 = ReLUINSConvTranspose2d(tch, tch // 2, kernel_size=3, stride=2,
+                                   padding=1, output_padding=1)
+    tch = tch // 2
     tch = tch + self.nz
-    decB4 = [nn.ConvTranspose2d(tch, output_dim_b, kernel_size=1, stride=1, padding=0)]+[nn.Tanh()]
+    decB4 = [nn.ConvTranspose2d(tch, output_dim_b, kernel_size=1, stride=1,
+                                padding=0)]+[nn.Tanh()]
     self.decB1 = nn.Sequential(*decB1)
     self.decB2 = nn.Sequential(*[decB2])
     self.decB3 = nn.Sequential(*[decB3])
@@ -370,35 +381,44 @@ class G_concat(nn.Module):
 
   def forward_a(self, x, z):
     out0 = self.dec_share(x)
-    z_img = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), x.size(2), x.size(3))
+    z_img = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                      x.size(2), x.size(3))
     x_and_z = torch.cat([out0, z_img], 1)
     out1 = self.decA1(x_and_z)
-    z_img2 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out1.size(2), out1.size(3))
+    z_img2 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out1.size(2), out1.size(3))
     x_and_z2 = torch.cat([out1, z_img2], 1)
     out2 = self.decA2(x_and_z2)
-    z_img3 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out2.size(2), out2.size(3))
+    z_img3 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out2.size(2), out2.size(3))
     x_and_z3 = torch.cat([out2, z_img3], 1)
     out3 = self.decA3(x_and_z3)
-    z_img4 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out3.size(2), out3.size(3))
+    z_img4 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out3.size(2), out3.size(3))
     x_and_z4 = torch.cat([out3, z_img4], 1)
     out4 = self.decA4(x_and_z4)
     return out4
 
   def forward_b(self, x, z):
     out0 = self.dec_share(x)
-    z_img = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), x.size(2), x.size(3))
+    z_img = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                      x.size(2), x.size(3))
     x_and_z = torch.cat([out0,  z_img], 1)
     out1 = self.decB1(x_and_z)
-    z_img2 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out1.size(2), out1.size(3))
+    z_img2 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out1.size(2), out1.size(3))
     x_and_z2 = torch.cat([out1, z_img2], 1)
     out2 = self.decB2(x_and_z2)
-    z_img3 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out2.size(2), out2.size(3))
+    z_img3 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out2.size(2), out2.size(3))
     x_and_z3 = torch.cat([out2, z_img3], 1)
     out3 = self.decB3(x_and_z3)
-    z_img4 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), out3.size(2), out3.size(3))
+    z_img4 = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                       out3.size(2), out3.size(3))
     x_and_z4 = torch.cat([out3, z_img4], 1)
     out4 = self.decB4(x_and_z4)
     return out4
+
 
 ####################################################################
 #------------------------- Basic Functions -------------------------
@@ -408,24 +428,30 @@ def get_scheduler(optimizer, opts, cur_ep=-1):
     def lambda_rule(ep):
       lr_l = 1.0 - max(0, ep - opts.n_ep_decay) / float(opts.n_ep - opts.n_ep_decay + 1)
       return lr_l
-    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule, last_epoch=cur_ep)
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule,
+                                      last_epoch=cur_ep)
   elif opts.lr_policy == 'step':
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=opts.n_ep_decay, gamma=0.1, last_epoch=cur_ep)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=opts.n_ep_decay,
+                                    gamma=0.1, last_epoch=cur_ep)
   else:
     return NotImplementedError('no such learn rate policy')
   return scheduler
 
+
 def meanpoolConv(inplanes, outplanes):
   sequence = []
   sequence += [nn.AvgPool2d(kernel_size=2, stride=2)]
-  sequence += [nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=1, padding=0, bias=True)]
+  sequence += [nn.Conv2d(inplanes, outplanes, kernel_size=1, stride=1,
+                         padding=0, bias=True)]
   return nn.Sequential(*sequence)
+
 
 def convMeanpool(inplanes, outplanes):
   sequence = []
   sequence += conv3x3(inplanes, outplanes)
   sequence += [nn.AvgPool2d(kernel_size=2, stride=2)]
   return nn.Sequential(*sequence)
+
 
 def get_norm_layer(layer_type='instance'):
   if layer_type == 'batch':
@@ -438,6 +464,7 @@ def get_norm_layer(layer_type='instance'):
     raise NotImplementedError('normalization layer [%s] is not found' % layer_type)
   return norm_layer
 
+
 def get_non_linearity(layer_type='relu'):
   if layer_type == 'relu':
     nl_layer = functools.partial(nn.ReLU, inplace=True)
@@ -448,18 +475,22 @@ def get_non_linearity(layer_type='relu'):
   else:
     raise NotImplementedError('nonlinearity activitation [%s] is not found' % layer_type)
   return nl_layer
+
+
 def conv3x3(in_planes, out_planes):
-  return [nn.ReflectionPad2d(1), nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=1, padding=0, bias=True)]
+  return [nn.ReflectionPad2d(1), nn.Conv2d(in_planes, out_planes, kernel_size=3,
+                                           stride=1, padding=0, bias=True)]
+
 
 def gaussian_weights_init(m):
   classname = m.__class__.__name__
   if classname.find('Conv') != -1 and classname.find('Conv') == 0:
     m.weight.data.normal_(0.0, 0.02)
 
+
 ####################################################################
 #-------------------------- Basic Blocks --------------------------
 ####################################################################
-
 ## The code of LayerNorm is modified from MUNIT (https://github.com/NVlabs/MUNIT)
 class LayerNorm(nn.Module):
   def __init__(self, n_out, eps=1e-5, affine=True):
@@ -470,12 +501,16 @@ class LayerNorm(nn.Module):
       self.weight = nn.Parameter(torch.ones(n_out, 1, 1))
       self.bias = nn.Parameter(torch.zeros(n_out, 1, 1))
     return
+
   def forward(self, x):
     normalized_shape = x.size()[1:]
     if self.affine:
-      return F.layer_norm(x, normalized_shape, self.weight.expand(normalized_shape), self.bias.expand(normalized_shape))
+      return F.layer_norm(x, normalized_shape,
+                          self.weight.expand(normalized_shape),
+                          self.bias.expand(normalized_shape))
     else:
       return F.layer_norm(x, normalized_shape)
+
 
 class BasicBlock(nn.Module):
   def __init__(self, inplanes, outplanes, norm_layer=None, nl_layer=None):
@@ -495,15 +530,19 @@ class BasicBlock(nn.Module):
     out = self.conv(x) + self.shortcut(x)
     return out
 
+
 class LeakyReLUConv2d(nn.Module):
-  def __init__(self, n_in, n_out, kernel_size, stride, padding=0, norm='None', sn=False):
+  def __init__(self, n_in, n_out, kernel_size, stride, padding=0, norm='None',
+               sn=False):
     super(LeakyReLUConv2d, self).__init__()
     model = []
     model += [nn.ReflectionPad2d(padding)]
     if sn:
-      model += [spectral_norm(nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=0, bias=True))]
+      model += [spectral_norm(nn.Conv2d(n_in, n_out, kernel_size=kernel_size,
+                                        stride=stride, padding=0, bias=True))]
     else:
-      model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=0, bias=True)]
+      model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride,
+                          padding=0, bias=True)]
     if 'norm' == 'Instance':
       model += [nn.InstanceNorm2d(n_out, affine=False)]
     model += [nn.LeakyReLU(inplace=True)]
@@ -513,12 +552,14 @@ class LeakyReLUConv2d(nn.Module):
   def forward(self, x):
     return self.model(x)
 
+
 class ReLUINSConv2d(nn.Module):
   def __init__(self, n_in, n_out, kernel_size, stride, padding=0):
     super(ReLUINSConv2d, self).__init__()
     model = []
     model += [nn.ReflectionPad2d(padding)]
-    model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=0, bias=True)]
+    model += [nn.Conv2d(n_in, n_out, kernel_size=kernel_size, stride=stride,
+                        padding=0, bias=True)]
     model += [nn.InstanceNorm2d(n_out, affine=False)]
     model += [nn.ReLU(inplace=True)]
     self.model = nn.Sequential(*model)
@@ -526,9 +567,11 @@ class ReLUINSConv2d(nn.Module):
   def forward(self, x):
     return self.model(x)
 
+
 class INSResBlock(nn.Module):
   def conv3x3(self, inplanes, out_planes, stride=1):
-    return [nn.ReflectionPad2d(1), nn.Conv2d(inplanes, out_planes, kernel_size=3, stride=stride)]
+    return [nn.ReflectionPad2d(1), nn.Conv2d(inplanes, out_planes,
+                                             kernel_size=3, stride=stride)]
   def __init__(self, inplanes, planes, stride=1, dropout=0.0):
     super(INSResBlock, self).__init__()
     model = []
@@ -547,29 +590,30 @@ class INSResBlock(nn.Module):
     out += residual
     return out
 
+
 class MisINSResBlock(nn.Module):
   def conv3x3(self, dim_in, dim_out, stride=1):
-    return nn.Sequential(nn.ReflectionPad2d(1), nn.Conv2d(dim_in, dim_out, kernel_size=3, stride=stride))
+    return nn.Sequential(nn.ReflectionPad2d(1), nn.Conv2d(dim_in, dim_out,
+                                                          kernel_size=3,
+                                                          stride=stride))
+
   def conv1x1(self, dim_in, dim_out):
     return nn.Conv2d(dim_in, dim_out, kernel_size=1, stride=1, padding=0)
+
   def __init__(self, dim, dim_extra, stride=1, dropout=0.0):
     super(MisINSResBlock, self).__init__()
-    self.conv1 = nn.Sequential(
-        self.conv3x3(dim, dim, stride),
-        nn.InstanceNorm2d(dim))
-    self.conv2 = nn.Sequential(
-        self.conv3x3(dim, dim, stride),
-        nn.InstanceNorm2d(dim))
-    self.blk1 = nn.Sequential(
-        self.conv1x1(dim + dim_extra, dim + dim_extra),
-        nn.ReLU(inplace=False),
-        self.conv1x1(dim + dim_extra, dim),
-        nn.ReLU(inplace=False))
-    self.blk2 = nn.Sequential(
-        self.conv1x1(dim + dim_extra, dim + dim_extra),
-        nn.ReLU(inplace=False),
-        self.conv1x1(dim + dim_extra, dim),
-        nn.ReLU(inplace=False))
+    self.conv1 = nn.Sequential(self.conv3x3(dim, dim, stride),
+                               nn.InstanceNorm2d(dim))
+    self.conv2 = nn.Sequential(self.conv3x3(dim, dim, stride),
+                               nn.InstanceNorm2d(dim))
+    self.blk1 = nn.Sequential(self.conv1x1(dim + dim_extra, dim + dim_extra),
+                              nn.ReLU(inplace=False),
+                              self.conv1x1(dim + dim_extra, dim),
+                              nn.ReLU(inplace=False))
+    self.blk2 = nn.Sequential(self.conv1x1(dim + dim_extra, dim + dim_extra),
+                              nn.ReLU(inplace=False),
+                              self.conv1x1(dim + dim_extra, dim),
+                              nn.ReLU(inplace=False))
     model = []
     if dropout > 0:
       model += [nn.Dropout(p=dropout)]
@@ -579,9 +623,11 @@ class MisINSResBlock(nn.Module):
     self.conv2.apply(gaussian_weights_init)
     self.blk1.apply(gaussian_weights_init)
     self.blk2.apply(gaussian_weights_init)
+
   def forward(self, x, z):
     residual = x
-    z_expand = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1), x.size(2), x.size(3))
+    z_expand = z.view(z.size(0), z.size(1), 1, 1).expand(z.size(0), z.size(1),
+                                                         x.size(2), x.size(3))
     o1 = self.conv1(x)
     o2 = self.blk1(torch.cat([o1, z_expand], dim=1))
     o3 = self.conv2(o2)
@@ -589,24 +635,30 @@ class MisINSResBlock(nn.Module):
     out += residual
     return out
 
+
 class GaussianNoiseLayer(nn.Module):
   def __init__(self,):
     super(GaussianNoiseLayer, self).__init__()
+
   def forward(self, x):
     if self.training == False:
       return x
     noise = Variable(torch.randn(x.size()).cuda(x.get_device()))
     return x + noise
 
+
 class ReLUINSConvTranspose2d(nn.Module):
   def __init__(self, n_in, n_out, kernel_size, stride, padding, output_padding):
     super(ReLUINSConvTranspose2d, self).__init__()
     model = []
-    model += [nn.ConvTranspose2d(n_in, n_out, kernel_size=kernel_size, stride=stride, padding=padding, output_padding=output_padding, bias=True)]
+    model += [nn.ConvTranspose2d(n_in, n_out, kernel_size=kernel_size,
+                                 stride=stride, padding=padding,
+                                 output_padding=output_padding, bias=True)]
     model += [LayerNorm(n_out)]
     model += [nn.ReLU(inplace=True)]
     self.model = nn.Sequential(*model)
     self.model.apply(gaussian_weights_init)
+
   def forward(self, x):
     return self.model(x)
 
@@ -624,6 +676,7 @@ class SpectralNorm(object):
                        'got n_power_iterations={}'.format(n_power_iterations))
     self.n_power_iterations = n_power_iterations
     self.eps = eps
+
   def compute_weight(self, module):
     weight = getattr(module, self.name + '_orig')
     u = getattr(module, self.name + '_u')
@@ -631,7 +684,8 @@ class SpectralNorm(object):
     if self.dim != 0:
       # permute dim to front
       weight_mat = weight_mat.permute(self.dim,
-                                            *[d for d in range(weight_mat.dim()) if d != self.dim])
+                                      *[d for d in range(weight_mat.dim())
+                                        if d != self.dim])
     height = weight_mat.size(0)
     weight_mat = weight_mat.reshape(height, -1)
     with torch.no_grad():
@@ -641,12 +695,14 @@ class SpectralNorm(object):
     sigma = torch.dot(u, torch.matmul(weight_mat, v))
     weight = weight / sigma
     return weight, u
+
   def remove(self, module):
     weight = getattr(module, self.name)
     delattr(module, self.name)
     delattr(module, self.name + '_u')
     delattr(module, self.name + '_orig')
     module.register_parameter(self.name, torch.nn.Parameter(weight))
+
   def __call__(self, module, inputs):
     if module.training:
       weight, u = self.compute_weight(module)
@@ -669,6 +725,7 @@ class SpectralNorm(object):
     module.register_forward_pre_hook(fn)
     return fn
 
+
 def spectral_norm(module, name='weight', n_power_iterations=1, eps=1e-12, dim=None):
   if dim is None:
     if isinstance(module, (torch.nn.ConvTranspose1d,
@@ -680,6 +737,7 @@ def spectral_norm(module, name='weight', n_power_iterations=1, eps=1e-12, dim=No
   SpectralNorm.apply(module, name, n_power_iterations, dim, eps)
   return module
 
+
 def remove_spectral_norm(module, name='weight'):
   for k, hook in module._forward_pre_hooks.items():
     if isinstance(hook, SpectralNorm) and hook.name == name:
@@ -687,4 +745,3 @@ def remove_spectral_norm(module, name='weight'):
       del module._forward_pre_hooks[k]
       return module
   raise ValueError("spectral_norm of '{}' not found in {}".format(name, module))
-
