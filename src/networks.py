@@ -93,39 +93,55 @@ class Dis(nn.Module):
 class E_content(nn.Module):
   def __init__(self, input_dim_a, input_dim_b):
     super(E_content, self).__init__()
-    encA_c = []
+    self.encA_c = []
     tch = 64
-    encA_c += [LeakyReLUConv2d(input_dim_a, tch, kernel_size=7, stride=1, padding=3)]
+    self.encA_c += [LeakyReLUConv2d(input_dim_a, tch, kernel_size=7, stride=1, padding=3)]
     for i in range(1, 3):
-      encA_c += [ReLUINSConv2d(tch, tch * 2, kernel_size=3, stride=2, padding=1)]
+      self.encA_c += [ReLUINSConv2d(tch, tch * 2, kernel_size=3, stride=2, padding=1)]
       tch *= 2
     for i in range(0, 3):
-      encA_c += [INSResBlock(tch, tch)]
+      self.encA_c += [INSResBlock(tch, tch)]
 
-    encB_c = []
+    self.encB_c = []
     tch = 64
-    encB_c += [LeakyReLUConv2d(input_dim_b, tch, kernel_size=7, stride=1, padding=3)]
+    self.encB_c += [LeakyReLUConv2d(input_dim_b, tch, kernel_size=7, stride=1, padding=3)]
     for i in range(1, 3):
-      encB_c += [ReLUINSConv2d(tch, tch * 2, kernel_size=3, stride=2, padding=1)]
+      self.encB_c += [ReLUINSConv2d(tch, tch * 2, kernel_size=3, stride=2, padding=1)]
       tch *= 2
     for i in range(0, 3):
-      encB_c += [INSResBlock(tch, tch)]
+      self.encB_c += [INSResBlock(tch, tch)]
 
-    self.convA = nn.Sequential(*encA_c)
-    self.convB = nn.Sequential(*encB_c)
+    self.convA = nn.Sequential(*self.encA_c)
+    self.convB = nn.Sequential(*self.encB_c)
 
   def forward(self, xa, xb):
-    outputA = self.convA(xa)
-    outputB = self.convB(xb)
-    return outputA, outputB
+    outputA = xa
+    A_outs = []
+    for layer in self.encA_c:
+        outputA = layer(outputA)
+        A_outs += [outputA]
+    outputB = xb
+    B_outs = []
+    for layer in self.encB_c:
+        outputB = layer(outputB)
+        B_outs += [outputB]
+    return (outputA, A_outs), (outputB, B_outs)
 
   def forward_a(self, xa):
-    outputA = self.convA(xa)
-    return outputA
+    outputA = xa
+    A_outs = []
+    for layer in self.encA_c:
+        outputA = layer(outputA)
+        A_outs += [outputA]
+    return outputA, A_outs
 
   def forward_b(self, xb):
-    outputB = self.convB(xb)
-    return outputB
+    outputB = xb
+    B_outs = []
+    for layer in self.encB_c:
+        outputB = layer(outputB)
+        B_outs += [outputB]
+    return outputB, B_outs
 
 
 class E_content_shared(nn.Module):

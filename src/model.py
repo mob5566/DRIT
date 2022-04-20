@@ -98,17 +98,17 @@ class DRIT(nn.Module):
   def test_forward(self, image, a2b=True):
     self.z_random = self.get_z_random(image.size(0), self.nz, 'gauss')
     if a2b:
-        self.z_content = self.enc_c.forward_a(image)
+        (self.z_content, self.z_content_outs) = self.enc_c.forward_a(image)
         self.z_content = self.enc_c_shared.forward_a(self.z_content)
         output = self.gen.forward_b(self.z_content, self.z_random)
     else:
-        self.z_content = self.enc_c.forward_b(image)
+        (self.z_content, self.z_content_outs) = self.enc_c.forward_b(image)
         self.z_content = self.enc_c_shared.forward_b(self.z_content)
         output = self.gen.forward_a(self.z_content, self.z_random)
     return output
 
   def test_forward_transfer(self, image_a, image_b, a2b=True):
-    self.z_content_a, self.z_content_b = self.enc_c(image_a, image_b)
+    (self.z_content_a, self.z_content_a_outs), (self.z_content_b, self.z_content_b_outs) = self.enc_c(image_a, image_b)
     self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
     if self.concat:
       self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a(image_a, image_b)
@@ -137,7 +137,7 @@ class DRIT(nn.Module):
     self.real_B_random = real_B[half_size:]
 
     # get encoded z_c
-    self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
+    (self.z_content_a, self.z_content_a_outs), (self.z_content_b, self.z_content_b_outs) = self.enc_c(self.real_A_encoded, self.real_B_encoded)
     self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
 
     # get encoded z_a
@@ -178,7 +178,7 @@ class DRIT(nn.Module):
       self.fake_B_encoded, self.fake_BB_encoded, self.fake_B_random = torch.split(output_fakeB, self.z_content_a.size(0), dim=0)
 
     # get reconstructed encoded z_c
-    self.z_content_recon_b, self.z_content_recon_a = self.enc_c(self.fake_A_encoded, self.fake_B_encoded)
+    (self.z_content_recon_b, self.z_content_recon_b_outs), (self.z_content_recon_a, self.z_content_recon_a_outs) = self.enc_c(self.fake_A_encoded, self.fake_B_encoded)
     self.z_content_recon_b, self.z_content_recon_a = self.enc_c_shared(self.z_content_recon_b, self.z_content_recon_a)
 
     # get reconstructed encoded z_a
@@ -214,7 +214,7 @@ class DRIT(nn.Module):
     self.real_A_encoded = self.input_A[0:half_size]
     self.real_B_encoded = self.input_B[0:half_size]
     # get encoded z_c
-    self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
+    (self.z_content_a, self.z_content_a_outs), (self.z_content_b, self.z_content_b_outs) = self.enc_c(self.real_A_encoded, self.real_B_encoded)
     self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
 
   def update_D_content(self, image_a, image_b):
