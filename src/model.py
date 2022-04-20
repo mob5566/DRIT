@@ -29,6 +29,7 @@ class DRIT(nn.Module):
 
     # encoders
     self.enc_c = networks.E_content(opts.input_dim_a, opts.input_dim_b)
+    self.enc_c_shared = networks.E_content_shared()
     if self.concat:
       self.enc_a = networks.E_attr_concat(
           opts.input_dim_a, opts.input_dim_b, self.nz, norm_layer=None,
@@ -50,6 +51,7 @@ class DRIT(nn.Module):
     self.disB2_opt = torch.optim.Adam(self.disB2.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
     self.disContent_opt = torch.optim.Adam(self.disContent.parameters(), lr=lr_dcontent, betas=(0.5, 0.999), weight_decay=0.0001)
     self.enc_c_opt = torch.optim.Adam(self.enc_c.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
+    self.enc_c_shared_opt = torch.optim.Adam(self.enc_c_shared.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
     self.enc_a_opt = torch.optim.Adam(self.enc_a.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
     self.gen_opt = torch.optim.Adam(self.gen.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
 
@@ -64,6 +66,7 @@ class DRIT(nn.Module):
     self.disContent.apply(networks.gaussian_weights_init)
     self.gen.apply(networks.gaussian_weights_init)
     self.enc_c.apply(networks.gaussian_weights_init)
+    self.enc_c_shared.apply(networks.gaussian_weights_init)
     self.enc_a.apply(networks.gaussian_weights_init)
 
   def set_scheduler(self, opts, last_ep=0):
@@ -84,6 +87,7 @@ class DRIT(nn.Module):
     self.disB2.cuda(self.gpu)
     self.disContent.cuda(self.gpu)
     self.enc_c.cuda(self.gpu)
+    self.enc_c_shared.cuda(self.gpu)
     self.enc_a.cuda(self.gpu)
     self.gen.cuda(self.gpu)
 
@@ -95,14 +99,17 @@ class DRIT(nn.Module):
     self.z_random = self.get_z_random(image.size(0), self.nz, 'gauss')
     if a2b:
         self.z_content = self.enc_c.forward_a(image)
+        self.z_content = self.enc_c_shared.forward_a(self.z_content)
         output = self.gen.forward_b(self.z_content, self.z_random)
     else:
         self.z_content = self.enc_c.forward_b(image)
+        self.z_content = self.enc_c_shared.forward_b(self.z_content)
         output = self.gen.forward_a(self.z_content, self.z_random)
     return output
 
   def test_forward_transfer(self, image_a, image_b, a2b=True):
     self.z_content_a, self.z_content_b = self.enc_c(image_a, image_b)
+    self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
     if self.concat:
       self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a(image_a, image_b)
       std_a = self.logvar_a.mul(0.5).exp_()
@@ -131,6 +138,7 @@ class DRIT(nn.Module):
 
     # get encoded z_c
     self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
+    self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
 
     # get encoded z_a
     if self.concat:
@@ -171,6 +179,7 @@ class DRIT(nn.Module):
 
     # get reconstructed encoded z_c
     self.z_content_recon_b, self.z_content_recon_a = self.enc_c(self.fake_A_encoded, self.fake_B_encoded)
+    self.z_content_recon_b, self.z_content_recon_a = self.enc_c_shared(self.z_content_recon_b, self.z_content_recon_a)
 
     # get reconstructed encoded z_a
     if self.concat:
@@ -206,6 +215,7 @@ class DRIT(nn.Module):
     self.real_B_encoded = self.input_B[0:half_size]
     # get encoded z_c
     self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
+    self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
 
   def update_D_content(self, image_a, image_b):
     self.input_A = image_a
@@ -291,11 +301,13 @@ class DRIT(nn.Module):
   def update_EG(self):
     # update G, Ec, Ea
     self.enc_c_opt.zero_grad()
+    self.enc_c_shared_opt.zero_grad()
     self.enc_a_opt.zero_grad()
     self.gen_opt.zero_grad()
     self.backward_EG()
     self.backward_G_alone()   # backward_G_alone here to accumulate gradient together before update
     self.enc_c_opt.step()
+    self.enc_c_shared_opt.step()
     self.enc_a_opt.step()
     self.gen_opt.step()
 
@@ -437,6 +449,7 @@ class DRIT(nn.Module):
     self.disB2_sch.step()
     self.disContent_sch.step()
     self.enc_c_sch.step()
+    self.enc_c_shared_sch.step()
     self.enc_a_sch.step()
     self.gen_sch.step()
 
@@ -455,6 +468,7 @@ class DRIT(nn.Module):
       self.disB2.load_state_dict(checkpoint['disB2'])
       self.disContent.load_state_dict(checkpoint['disContent'])
     self.enc_c.load_state_dict(checkpoint['enc_c'])
+    self.enc_c_shared.load_state_dict(checkpoint['enc_c_shared'])
     self.enc_a.load_state_dict(checkpoint['enc_a'])
     self.gen.load_state_dict(checkpoint['gen'])
     # optimizer
@@ -465,6 +479,7 @@ class DRIT(nn.Module):
       self.disB2_opt.load_state_dict(checkpoint['disB2_opt'])
       self.disContent_opt.load_state_dict(checkpoint['disContent_opt'])
       self.enc_c_opt.load_state_dict(checkpoint['enc_c_opt'])
+      self.enc_c_shared_opt.load_state_dict(checkpoint['enc_c_shared_opt'])
       self.enc_a_opt.load_state_dict(checkpoint['enc_a_opt'])
       self.gen_opt.load_state_dict(checkpoint['gen_opt'])
     return checkpoint['ep'], checkpoint['total_it']
@@ -477,6 +492,7 @@ class DRIT(nn.Module):
              'disB2': self.disB2.state_dict(),
              'disContent': self.disContent.state_dict(),
              'enc_c': self.enc_c.state_dict(),
+             'enc_c_shared': self.enc_c_shared.state_dict(),
              'enc_a': self.enc_a.state_dict(),
              'gen': self.gen.state_dict(),
              'disA_opt': self.disA_opt.state_dict(),
@@ -485,6 +501,7 @@ class DRIT(nn.Module):
              'disB2_opt': self.disB2_opt.state_dict(),
              'disContent_opt': self.disContent_opt.state_dict(),
              'enc_c_opt': self.enc_c_opt.state_dict(),
+             'enc_c_shared_opt': self.enc_c_shared_opt.state_dict(),
              'enc_a_opt': self.enc_a_opt.state_dict(),
              'gen_opt': self.gen_opt.state_dict(),
              'ep': ep,

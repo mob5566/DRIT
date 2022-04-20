@@ -111,31 +111,46 @@ class E_content(nn.Module):
     for i in range(0, 3):
       encB_c += [INSResBlock(tch, tch)]
 
-    enc_share = []
-    for i in range(0, 1):
-      enc_share += [INSResBlock(tch, tch)]
-      enc_share += [GaussianNoiseLayer()]
-      self.conv_share = nn.Sequential(*enc_share)
-
     self.convA = nn.Sequential(*encA_c)
     self.convB = nn.Sequential(*encB_c)
 
   def forward(self, xa, xb):
     outputA = self.convA(xa)
     outputB = self.convB(xb)
-    outputA = self.conv_share(outputA)
-    outputB = self.conv_share(outputB)
     return outputA, outputB
 
   def forward_a(self, xa):
     outputA = self.convA(xa)
-    outputA = self.conv_share(outputA)
     return outputA
 
   def forward_b(self, xb):
     outputB = self.convB(xb)
-    outputB = self.conv_share(outputB)
     return outputB
+
+
+class E_content_shared(nn.Module):
+  def __init__(self):
+    super().__init__()
+    tch = 256
+    enc_share = []
+    for i in range(0, 1):
+      enc_share += [INSResBlock(tch, tch)]
+      enc_share += [GaussianNoiseLayer()]
+      self.conv_share = nn.Sequential(*enc_share)
+
+  def forward(self, xa, xb):
+    outputA = self.conv_share(xa)
+    outputB = self.conv_share(xb)
+    return outputA, outputB
+
+  def forward_a(self, xa):
+    outputA = self.conv_share(xa)
+    return outputA
+
+  def forward_b(self, xb):
+    outputB = self.conv_share(xb)
+    return outputB
+
 
 class E_attr(nn.Module):
   def __init__(self, input_dim_a, input_dim_b, output_nc=8):
