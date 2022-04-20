@@ -3,6 +3,7 @@ from options import TrainOptions
 from dataset import dataset_unpair
 from model import DRIT
 from saver import Saver
+from tqdm import tqdm
 
 def main():
   # parse options
@@ -34,8 +35,13 @@ def main():
   # train
   print('\n--- train ---')
   max_it = opts.max_it
-  for ep in range(ep0, opts.n_ep):
-    for it, (images_a, images_b) in enumerate(train_loader):
+  for ep in tqdm(range(ep0, opts.n_ep), unit='epoch'):
+    for it, data in enumerate(train_loader):
+      if opts.aux_masks:
+        images_a, masks_a, images_b = data
+      else:
+        images_a, images_b = data
+
       if images_a.size(0) != opts.batch_size or images_b.size(0) != opts.batch_size:
         continue
 
@@ -55,7 +61,9 @@ def main():
       if not opts.no_display_img:
         saver.write_display(total_it, model)
 
-      print('total_it: %d (ep %d, it %d), lr %08f' % (total_it, ep, it, model.gen_opt.param_groups[0]['lr']))
+      if (total_it + 1) % opts.log_freq == 0:
+        print('total_it: %d (ep %d, it %d), lr %08f' % (total_it + 1, ep, it, model.gen_opt.param_groups[0]['lr']))
+
       total_it += 1
       if total_it >= max_it:
         saver.write_img(-999, model)
