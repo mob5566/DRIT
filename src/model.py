@@ -100,9 +100,9 @@ class DRIT(nn.Module):
     return output
 
   def test_forward_transfer(self, image_a, image_b, a2b=True):
-    self.z_content_a, self.z_content_b = self.enc_c.forward(image_a, image_b)
+    self.z_content_a, self.z_content_b = self.enc_c(image_a, image_b)
     if self.concat:
-      self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a.forward(image_a, image_b)
+      self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a(image_a, image_b)
       std_a = self.logvar_a.mul(0.5).exp_()
       eps = self.get_z_random(std_a.size(0), std_a.size(1), 'gauss')
       self.z_attr_a = eps.mul(std_a).add_(self.mu_a)
@@ -110,7 +110,7 @@ class DRIT(nn.Module):
       eps = self.get_z_random(std_b.size(0), std_b.size(1), 'gauss')
       self.z_attr_b = eps.mul(std_b).add_(self.mu_b)
     else:
-      self.z_attr_a, self.z_attr_b = self.enc_a.forward(image_a, image_b)
+      self.z_attr_a, self.z_attr_b = self.enc_a(image_a, image_b)
     if a2b:
       output = self.gen.forward_b(self.z_content_a, self.z_attr_b)
     else:
@@ -128,11 +128,11 @@ class DRIT(nn.Module):
     self.real_B_random = real_B[half_size:]
 
     # get encoded z_c
-    self.z_content_a, self.z_content_b = self.enc_c.forward(self.real_A_encoded, self.real_B_encoded)
+    self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
 
     # get encoded z_a
     if self.concat:
-      self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a.forward(self.real_A_encoded, self.real_B_encoded)
+      self.mu_a, self.logvar_a, self.mu_b, self.logvar_b = self.enc_a(self.real_A_encoded, self.real_B_encoded)
       std_a = self.logvar_a.mul(0.5).exp_()
       eps_a = self.get_z_random(std_a.size(0), std_a.size(1), 'gauss')
       self.z_attr_a = eps_a.mul(std_a).add_(self.mu_a)
@@ -140,7 +140,7 @@ class DRIT(nn.Module):
       eps_b = self.get_z_random(std_b.size(0), std_b.size(1), 'gauss')
       self.z_attr_b = eps_b.mul(std_b).add_(self.mu_b)
     else:
-      self.z_attr_a, self.z_attr_b = self.enc_a.forward(self.real_A_encoded, self.real_B_encoded)
+      self.z_attr_a, self.z_attr_b = self.enc_a(self.real_A_encoded, self.real_B_encoded)
 
     # get random z_a
     self.z_random = self.get_z_random(self.real_A_encoded.size(0), self.nz, 'gauss')
@@ -168,11 +168,11 @@ class DRIT(nn.Module):
       self.fake_B_encoded, self.fake_BB_encoded, self.fake_B_random = torch.split(output_fakeB, self.z_content_a.size(0), dim=0)
 
     # get reconstructed encoded z_c
-    self.z_content_recon_b, self.z_content_recon_a = self.enc_c.forward(self.fake_A_encoded, self.fake_B_encoded)
+    self.z_content_recon_b, self.z_content_recon_a = self.enc_c(self.fake_A_encoded, self.fake_B_encoded)
 
     # get reconstructed encoded z_a
     if self.concat:
-      self.mu_recon_a, self.logvar_recon_a, self.mu_recon_b, self.logvar_recon_b = self.enc_a.forward(self.fake_A_encoded, self.fake_B_encoded)
+      self.mu_recon_a, self.logvar_recon_a, self.mu_recon_b, self.logvar_recon_b = self.enc_a(self.fake_A_encoded, self.fake_B_encoded)
       std_a = self.logvar_recon_a.mul(0.5).exp_()
       eps_a = self.get_z_random(std_a.size(0), std_a.size(1), 'gauss')
       self.z_attr_recon_a = eps_a.mul(std_a).add_(self.mu_recon_a)
@@ -180,7 +180,7 @@ class DRIT(nn.Module):
       eps_b = self.get_z_random(std_b.size(0), std_b.size(1), 'gauss')
       self.z_attr_recon_b = eps_b.mul(std_b).add_(self.mu_recon_b)
     else:
-      self.z_attr_recon_a, self.z_attr_recon_b = self.enc_a.forward(self.fake_A_encoded, self.fake_B_encoded)
+      self.z_attr_recon_a, self.z_attr_recon_b = self.enc_a(self.fake_A_encoded, self.fake_B_encoded)
 
     # second cross translation
     self.fake_A_recon = self.gen.forward_a(self.z_content_recon_a, self.z_attr_recon_a)
@@ -194,16 +194,16 @@ class DRIT(nn.Module):
 
     # for latent regression
     if self.concat:
-      self.mu2_a, _, self.mu2_b, _ = self.enc_a.forward(self.fake_A_random, self.fake_B_random)
+      self.mu2_a, _, self.mu2_b, _ = self.enc_a(self.fake_A_random, self.fake_B_random)
     else:
-      self.z_attr_random_a, self.z_attr_random_b = self.enc_a.forward(self.fake_A_random, self.fake_B_random)
+      self.z_attr_random_a, self.z_attr_random_b = self.enc_a(self.fake_A_random, self.fake_B_random)
 
   def forward_content(self):
     half_size = 1
     self.real_A_encoded = self.input_A[0:half_size]
     self.real_B_encoded = self.input_B[0:half_size]
     # get encoded z_c
-    self.z_content_a, self.z_content_b = self.enc_c.forward(self.real_A_encoded, self.real_B_encoded)
+    self.z_content_a, self.z_content_b = self.enc_c(self.real_A_encoded, self.real_B_encoded)
 
   def update_D_content(self, image_a, image_b):
     self.input_A = image_a
@@ -258,8 +258,8 @@ class DRIT(nn.Module):
     self.disContent_opt.step()
 
   def backward_D(self, netD, real, fake):
-    pred_fake = netD.forward(fake.detach())
-    pred_real = netD.forward(real.detach())
+    pred_fake = netD(fake.detach())
+    pred_real = netD(real.detach())
     loss_D = 0
     for it, (out_a, out_b) in enumerate(zip(pred_fake, pred_real)):
       out_fake = nn.functional.sigmoid(out_a)
@@ -273,8 +273,8 @@ class DRIT(nn.Module):
     return loss_D
 
   def backward_contentD(self, imageA, imageB):
-    pred_fake = self.disContent.forward(imageA.detach())
-    pred_real = self.disContent.forward(imageB.detach())
+    pred_fake = self.disContent(imageA.detach())
+    pred_real = self.disContent(imageB.detach())
     for it, (out_a, out_b) in enumerate(zip(pred_fake, pred_real)):
       out_fake = nn.functional.sigmoid(out_a)
       out_real = nn.functional.sigmoid(out_b)
@@ -358,7 +358,7 @@ class DRIT(nn.Module):
     self.G_loss = loss_G.item()
 
   def backward_G_GAN_content(self, data):
-    outs = self.disContent.forward(data)
+    outs = self.disContent(data)
     # model = networks.Dis_content()
     # model.load_state_dict(self.disContent.state_dict())
     # model.cuda(self.gpu)
@@ -371,7 +371,7 @@ class DRIT(nn.Module):
     return ad_loss
 
   def backward_G_GAN(self, fake, netD=None):
-    outs_fake = netD.forward(fake)
+    outs_fake = netD(fake)
     # if self.opts.dis_scale > 1:
     #   model = networks.MultiScaleDis(self.opts.input_dim_a, self.opts.dis_scale, norm=self.opts.dis_norm, sn=self.opts.dis_spectral_norm)
     # else:
