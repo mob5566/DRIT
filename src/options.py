@@ -14,6 +14,7 @@ class TrainOptions():
     self.parser.add_argument('--input_dim_b', type=int, default=3, help='# of input channels for domain B')
     self.parser.add_argument('--nThreads', type=int, default=8, help='# of threads for data loader')
     self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
+    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
 
     # ouptput related
     self.parser.add_argument('--name', type=str, default='trial', help='folder name to save outputs')
@@ -37,8 +38,8 @@ class TrainOptions():
     self.parser.add_argument('--d_iter', type=int, default=3, help='# of iterations for updating content discriminator')
     self.parser.add_argument('--gpu', type=int, default=0, help='gpu')
 
-  def parse(self):
-    self.opt = self.parser.parse_args()
+  def parse(self, arguments=None):
+    self.opt = self.parser.parse_args(arguments)
     args = vars(self.opt)
     print('\n--- load options ---')
     for name, value in sorted(args.items()):
@@ -58,6 +59,8 @@ class TestOptions():
     self.parser.add_argument('--input_dim_a', type=int, default=3, help='# of input channels for domain A')
     self.parser.add_argument('--input_dim_b', type=int, default=3, help='# of input channels for domain B')
     self.parser.add_argument('--a2b', type=int, default=1, help='translation direction, 1 for a2b, 0 for b2a')
+    self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
+    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
 
     # ouptput related
     self.parser.add_argument('--num', type=int, default=5, help='number of outputs per image')
@@ -70,8 +73,8 @@ class TestOptions():
     self.parser.add_argument('--resume', type=str, required=True, help='specified the dir of saved models for resume the training')
     self.parser.add_argument('--gpu', type=int, default=0, help='gpu')
 
-  def parse(self):
-    self.opt = self.parser.parse_args()
+  def parse(self, arguments=None):
+    self.opt = self.parser.parse_args(arguments)
     args = vars(self.opt)
     print('\n--- load options ---')
     for name, value in sorted(args.items()):
