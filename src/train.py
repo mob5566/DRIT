@@ -62,7 +62,7 @@ def main():
 
       # save to display file
       if not opts.no_display_img:
-        saver.write_display(total_it, model)
+        saver.write_display_log(total_it, model)
 
       if (total_it + 1) % opts.log_freq == 0:
         print('total_it: %d (ep %d, it %d), lr %08f' % (total_it + 1, ep, it, model.gen_opt.param_groups[0]['lr']))
@@ -79,6 +79,9 @@ def main():
     # decay learning rate
     if opts.n_ep_decay > -1:
       model.update_lr()
+
+    # display images to tensorboard
+    saver.write_display_log(ep, model)
 
     # save result image
     saver.write_img(ep, model)
