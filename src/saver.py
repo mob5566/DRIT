@@ -57,7 +57,7 @@ class Saver():
     if (ep + 1) % self.display_img_freq == 0:
       # write img
       image_dis = torchvision.utils.make_grid(model.image_display, nrow=model.image_display.size(0)//2)/2 + 0.5
-      self.writer.add_image('Image', image_dis, total_it)
+      self.writer.add_image('Image', image_dis, ep)
 
   # save result images
   def write_img(self, ep, model, lastep=False):
