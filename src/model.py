@@ -13,6 +13,7 @@ class DRIT(nn.Module):
     self.concat = opts.concat
     self.no_ms = opts.no_ms
     self.aux_masks = opts.aux_masks
+    self.bsize = opts.batch_size
     # self.opts = opts
 
     # discriminators
@@ -144,7 +145,7 @@ class DRIT(nn.Module):
 
   def forward(self):
     # input images
-    half_size = 1
+    half_size = self.bsize // 2
     real_A = self.input_A
     real_B = self.input_B
     mask_A = self.mask_A
@@ -236,7 +237,7 @@ class DRIT(nn.Module):
       self.z_attr_random_a, self.z_attr_random_b = self.enc_a(self.fake_A_random, self.fake_B_random)
 
   def forward_content(self):
-    half_size = 1
+    half_size = self.bsize // 2
     self.real_A_encoded = self.input_A[0:half_size]
     self.real_B_encoded = self.input_B[0:half_size]
     # get encoded z_c
