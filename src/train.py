@@ -85,7 +85,7 @@ def main():
         break
 
     # decay learning rate
-    if opts.n_ep_decay > 0 and ep > opts.n_ep_decay:
+    if opts.n_ep_decay >= 0 and ep >= opts.n_ep_decay:
       model.update_lr()
 
     # display images to tensorboard
