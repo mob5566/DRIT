@@ -4,6 +4,13 @@ class TrainOptions():
   def __init__(self):
     self.parser = argparse.ArgumentParser()
 
+    # model related
+    self.parser.add_argument('--zs_dim', type=int, default=8, help='the dimension the of the style space')
+    self.parser.add_argument('--lr', type=float, default=0.0001, help='the initial learning rate')
+    self.parser.add_argument('--weight_decay', type=float, default=0.0001, help='the weight decay of the optimizer')
+    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
+    self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
+
     # data loader related
     self.parser.add_argument('--dataroot', type=str, required=True, help='path of data')
     self.parser.add_argument('--phase', type=str, default='train', help='phase for dataloading')
@@ -14,8 +21,6 @@ class TrainOptions():
     self.parser.add_argument('--input_dim_b', type=int, default=3, help='# of input channels for domain B')
     self.parser.add_argument('--nThreads', type=int, default=8, help='# of threads for data loader')
     self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
-    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
-    self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
 
     # ouptput related
     self.parser.add_argument('--name', type=str, default='trial', help='folder name to save outputs')
@@ -35,8 +40,8 @@ class TrainOptions():
     self.parser.add_argument('--dis_norm', type=str, default='None', help='normalization layer in discriminator [None, Instance]')
     self.parser.add_argument('--dis_spectral_norm', action='store_true', help='use spectral normalization in discriminator')
     self.parser.add_argument('--lr_policy', type=str, default='lambda', help='type of learn rate decay')
-    self.parser.add_argument('--n_ep', type=int, default=1200, help='number of epochs') # 400 * d_iter
-    self.parser.add_argument('--n_ep_decay', type=int, default=600, help='epoch start decay learning rate, set -1 if no decay') # 200 * d_iter
+    self.parser.add_argument('--n_ep', type=int, default=500, help='number of epochs') # 400 * d_iter
+    self.parser.add_argument('--n_ep_decay', type=int, default=250, help='epoch start decay learning rate, set -1 if no decay') # 200 * d_iter
     self.parser.add_argument('--max_it', type=int, default=500000, help='maximum number of iterations')
     self.parser.add_argument('--resume', type=str, default=None, help='specified the dir of saved models for resume the training')
     self.parser.add_argument('--d_iter', type=int, default=3, help='# of iterations for updating content discriminator')
