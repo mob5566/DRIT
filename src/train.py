@@ -4,11 +4,22 @@ from dataset import dataset_unpair
 from model import DRIT
 from saver import Saver
 from tqdm import tqdm
+import signal
+
 
 def main():
   # parse options
   parser = TrainOptions()
   opts = parser.parse()
+
+  # handle early stopping
+  early_stop = False
+  def signal_handler(sig, frame):
+    nonlocal early_stop
+    if not early_stop:
+      early_stop = True
+
+  signal.signal(signal.SIGINT, signal_handler)
 
   # daita loader
   print('\n--- load dataset ---')
@@ -68,13 +79,10 @@ def main():
         print('total_it: %d (ep %d, it %d), lr %08f' % (total_it + 1, ep, it, model.gen_opt.param_groups[0]['lr']))
 
       total_it += 1
-      if total_it >= max_it:
+      if total_it >= max_it or early_stop:
         saver.write_img(ep, model, True)
         saver.write_model(ep, total_it, model, True)
         break
-
-    if total_it >= max_it:
-      break
 
     # decay learning rate
     if opts.n_ep_decay > -1:
@@ -88,6 +96,9 @@ def main():
 
     # Save network weights
     saver.write_model(ep, total_it, model)
+
+    if total_it >= max_it or early_stop:
+      break
 
   return
 
