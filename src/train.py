@@ -89,7 +89,7 @@ def main():
       model.update_lr()
 
     # display images to tensorboard
-    saver.write_display_log(ep, model)
+    saver.write_display_img(ep, model)
 
     # save result image
     saver.write_img(ep, model)
