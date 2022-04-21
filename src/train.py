@@ -69,8 +69,8 @@ def main():
 
       total_it += 1
       if total_it >= max_it:
-        saver.write_img(-999, model)
-        saver.write_model(-999, total_it, model)
+        saver.write_img(ep, model, True)
+        saver.write_model(ep, total_it, model, True)
         break
 
     if total_it >= max_it:
