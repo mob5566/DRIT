@@ -87,6 +87,7 @@ class DRIT(nn.Module):
     self.disB2_sch = networks.get_scheduler(self.disB2_opt, opts, last_ep)
     self.disContent_sch = networks.get_scheduler(self.disContent_opt, opts, last_ep)
     self.enc_c_sch = networks.get_scheduler(self.enc_c_opt, opts, last_ep)
+    self.enc_c_shared_sch = networks.get_scheduler(self.enc_c_shared_opt, opts, last_ep)
     self.enc_a_sch = networks.get_scheduler(self.enc_a_opt, opts, last_ep)
     self.gen_sch = networks.get_scheduler(self.gen_opt, opts, last_ep)
     if self.aux_masks:
