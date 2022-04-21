@@ -148,12 +148,13 @@ class DRIT(nn.Module):
     half_size = self.bsize // 2
     real_A = self.input_A
     real_B = self.input_B
-    mask_A = self.mask_A
     self.real_A_encoded = real_A[0:half_size]
     self.real_A_random = real_A[half_size:]
     self.real_B_encoded = real_B[0:half_size]
     self.real_B_random = real_B[half_size:]
-    self.A_mask = mask_A[:half_size]
+    if self.aux_masks:
+      mask_A = self.mask_A
+      self.A_mask = mask_A[:half_size]
 
     # get encoded z_c
     (self.z_content_a, self.z_content_a_outs), (self.z_content_b, self.z_content_b_outs) = self.enc_c(self.real_A_encoded, self.real_B_encoded)
@@ -257,7 +258,8 @@ class DRIT(nn.Module):
   def update_D(self, image_a, image_b, mask_a=None):
     self.input_A = image_a
     self.input_B = image_b
-    self.mask_A = mask_a
+    if self.aux_masks:
+      self.mask_A = mask_a
     self.forward()
 
     # update disA
