@@ -15,6 +15,7 @@ class TrainOptions():
     self.parser.add_argument('--nThreads', type=int, default=8, help='# of threads for data loader')
     self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
     self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
+    self.parser.add_argument('--aux_n_classes', type=int, required=True, help='number of classes for segmentation')
 
     # ouptput related
     self.parser.add_argument('--name', type=str, default='trial', help='folder name to save outputs')
@@ -63,6 +64,7 @@ class TestOptions():
     self.parser.add_argument('--a2b', type=int, default=1, help='translation direction, 1 for a2b, 0 for b2a')
     self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
     self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
+    self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
 
     # ouptput related
     self.parser.add_argument('--num', type=int, default=5, help='number of outputs per image')

@@ -12,6 +12,7 @@ class DRIT(nn.Module):
     self.nz = 8
     self.concat = opts.concat
     self.no_ms = opts.no_ms
+    self.aux_masks = opts.aux_masks
     # self.opts = opts
 
     # discriminators
@@ -44,6 +45,10 @@ class DRIT(nn.Module):
     else:
       self.gen = networks.G(opts.input_dim_a, opts.input_dim_b, nz=self.nz)
 
+    # segmentation decoders
+    if self.aux_masks:
+      self.unet_dec = networks.UNetDecoder(n_classes=opts.aux_n_classes)
+
     # optimizers
     self.disA_opt = torch.optim.Adam(self.disA.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
     self.disB_opt = torch.optim.Adam(self.disB.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
@@ -55,8 +60,12 @@ class DRIT(nn.Module):
     self.enc_a_opt = torch.optim.Adam(self.enc_a.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
     self.gen_opt = torch.optim.Adam(self.gen.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
 
+    if self.aux_masks:
+      self.unet_dec_opt = torch.optim.Adam(self.unet_dec.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=0.0001)
+
     # Setup the loss function for training
     self.criterionL1 = torch.nn.L1Loss()
+    self.criterionCE = torch.nn.CrossEntropyLoss()
 
   def initialize(self):
     self.disA.apply(networks.gaussian_weights_init)
@@ -65,6 +74,8 @@ class DRIT(nn.Module):
     self.disB2.apply(networks.gaussian_weights_init)
     self.disContent.apply(networks.gaussian_weights_init)
     self.gen.apply(networks.gaussian_weights_init)
+    if self.aux_masks:
+      self.unet_dec.apply(networks.gaussian_weights_init)
     self.enc_c.apply(networks.gaussian_weights_init)
     self.enc_c_shared.apply(networks.gaussian_weights_init)
     self.enc_a.apply(networks.gaussian_weights_init)
@@ -78,6 +89,8 @@ class DRIT(nn.Module):
     self.enc_c_sch = networks.get_scheduler(self.enc_c_opt, opts, last_ep)
     self.enc_a_sch = networks.get_scheduler(self.enc_a_opt, opts, last_ep)
     self.gen_sch = networks.get_scheduler(self.gen_opt, opts, last_ep)
+    if self.aux_masks:
+      self.unet_dec_sch = networks.get_scheduler(self.unet_dec_opt, opts, last_ep)
 
   def setgpu(self, gpu):
     self.gpu = gpu
@@ -90,6 +103,8 @@ class DRIT(nn.Module):
     self.enc_c_shared.cuda(self.gpu)
     self.enc_a.cuda(self.gpu)
     self.gen.cuda(self.gpu)
+    if self.aux_masks:
+      self.unet_dec.cuda(self.gpu)
 
   def get_z_random(self, batchSize, nz, random_type='gauss'):
     z = torch.randn(batchSize, nz).cuda(self.gpu)
@@ -131,14 +146,20 @@ class DRIT(nn.Module):
     half_size = 1
     real_A = self.input_A
     real_B = self.input_B
+    mask_A = self.mask_A
     self.real_A_encoded = real_A[0:half_size]
     self.real_A_random = real_A[half_size:]
     self.real_B_encoded = real_B[0:half_size]
     self.real_B_random = real_B[half_size:]
+    self.A_mask = mask_A[:half_size]
 
     # get encoded z_c
     (self.z_content_a, self.z_content_a_outs), (self.z_content_b, self.z_content_b_outs) = self.enc_c(self.real_A_encoded, self.real_B_encoded)
     self.z_content_a, self.z_content_b = self.enc_c_shared(self.z_content_a, self.z_content_b)
+
+    # get segmentation
+    if self.aux_masks:
+      self.real_A_mask = self.unet_dec(self.z_content_a, self.z_content_a_outs[:3][::-1])
 
     # get encoded z_a
     if self.concat:
@@ -180,6 +201,10 @@ class DRIT(nn.Module):
     # get reconstructed encoded z_c
     (self.z_content_recon_b, self.z_content_recon_b_outs), (self.z_content_recon_a, self.z_content_recon_a_outs) = self.enc_c(self.fake_A_encoded, self.fake_B_encoded)
     self.z_content_recon_b, self.z_content_recon_a = self.enc_c_shared(self.z_content_recon_b, self.z_content_recon_a)
+
+    # get segmentation
+    if self.aux_masks:
+      self.recon_A_mask = self.unet_dec(self.z_content_recon_a, self.z_content_recon_a_outs[:3][::-1])
 
     # get reconstructed encoded z_a
     if self.concat:
@@ -227,9 +252,10 @@ class DRIT(nn.Module):
     nn.utils.clip_grad_norm_(self.disContent.parameters(), 5)
     self.disContent_opt.step()
 
-  def update_D(self, image_a, image_b):
+  def update_D(self, image_a, image_b, mask_a=None):
     self.input_A = image_a
     self.input_B = image_b
+    self.mask_A = mask_a
     self.forward()
 
     # update disA
@@ -348,12 +374,20 @@ class DRIT(nn.Module):
     loss_G_L1_AA = self.criterionL1(self.fake_AA_encoded, self.real_A_encoded) * 10
     loss_G_L1_BB = self.criterionL1(self.fake_BB_encoded, self.real_B_encoded) * 10
 
+    # segmentation loss
+    if self.aux_masks:
+      loss_seg_a = self.criterionCE(self.real_A_mask, self.A_mask) * 10
+      loss_seg_a_recon = self.criterionCE(self.recon_A_mask, self.A_mask) * 1
+
     loss_G = loss_G_GAN_A + loss_G_GAN_B + \
              loss_G_GAN_Acontent + loss_G_GAN_Bcontent + \
              loss_G_L1_AA + loss_G_L1_BB + \
              loss_G_L1_A + loss_G_L1_B + \
              loss_kl_zc_a + loss_kl_zc_b + \
              loss_kl_za_a + loss_kl_za_b
+
+    if self.aux_masks:
+      loss_G += loss_seg_a + loss_seg_a_recon
 
     loss_G.backward(retain_graph=True)
 
@@ -369,6 +403,9 @@ class DRIT(nn.Module):
     self.l1_recon_B_loss = loss_G_L1_B.item()
     self.l1_recon_AA_loss = loss_G_L1_AA.item()
     self.l1_recon_BB_loss = loss_G_L1_BB.item()
+    if self.aux_masks:
+      self.seg_a_loss = loss_seg_a.item()
+      self.seg_a_recon_loss = loss_seg_a_recon.item()
     self.G_loss = loss_G.item()
 
   def backward_G_GAN_content(self, data):
@@ -452,6 +489,8 @@ class DRIT(nn.Module):
     self.enc_c_shared_sch.step()
     self.enc_a_sch.step()
     self.gen_sch.step()
+    if self.aux_masks:
+      self.unet_dec_sch.step()
 
   def _l2_regularize(self, mu):
     mu_2 = torch.pow(mu, 2)
@@ -471,6 +510,8 @@ class DRIT(nn.Module):
     self.enc_c_shared.load_state_dict(checkpoint['enc_c_shared'])
     self.enc_a.load_state_dict(checkpoint['enc_a'])
     self.gen.load_state_dict(checkpoint['gen'])
+    if self.aux_masks:
+      self.unet_dec.load_state_dict(checkpoint['unet_dec'])
     # optimizer
     if train:
       self.disA_opt.load_state_dict(checkpoint['disA_opt'])
@@ -482,6 +523,8 @@ class DRIT(nn.Module):
       self.enc_c_shared_opt.load_state_dict(checkpoint['enc_c_shared_opt'])
       self.enc_a_opt.load_state_dict(checkpoint['enc_a_opt'])
       self.gen_opt.load_state_dict(checkpoint['gen_opt'])
+      if self.aux_masks:
+        self.unet_dec_opt.load_state_dict(checkpoint['unet_dec_opt'])
     return checkpoint['ep'], checkpoint['total_it']
 
   def save(self, filename, ep, total_it):
@@ -495,6 +538,7 @@ class DRIT(nn.Module):
              'enc_c_shared': self.enc_c_shared.state_dict(),
              'enc_a': self.enc_a.state_dict(),
              'gen': self.gen.state_dict(),
+             'unet_dec': self.unet_dec.state_dict() if self.aux_masks else None,
              'disA_opt': self.disA_opt.state_dict(),
              'disA2_opt': self.disA2_opt.state_dict(),
              'disB_opt': self.disB_opt.state_dict(),
@@ -504,6 +548,7 @@ class DRIT(nn.Module):
              'enc_c_shared_opt': self.enc_c_shared_opt.state_dict(),
              'enc_a_opt': self.enc_a_opt.state_dict(),
              'gen_opt': self.gen_opt.state_dict(),
+             'unet_dec_opt': self.unet_dec_opt.state_dict() if self.aux_masks else None,
              'ep': ep,
              'total_it': total_it
               }

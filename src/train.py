@@ -41,6 +41,7 @@ def main():
         images_a, masks_a, images_b = data
       else:
         images_a, images_b = data
+        masks_a = None
 
       if images_a.size(0) != opts.batch_size or images_b.size(0) != opts.batch_size:
         continue
@@ -48,13 +49,15 @@ def main():
       # input data
       images_a = images_a.cuda(opts.gpu).detach()
       images_b = images_b.cuda(opts.gpu).detach()
+      if opts.aux_masks:
+        masks_a = masks_a.cuda(opts.gpu).detach()
 
       # update model
       if (it + 1) % opts.d_iter != 0 and it < len(train_loader) - 2:
         model.update_D_content(images_a, images_b)
         continue
       else:
-        model.update_D(images_a, images_b)
+        model.update_D(images_a, images_b, masks_a)
         model.update_EG()
 
       # save to display file
