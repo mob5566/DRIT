@@ -4,6 +4,7 @@ from dataset import dataset_unpair
 from model import DRIT
 from saver import Saver
 from tqdm import tqdm
+from math import ceil
 import signal
 
 
@@ -24,7 +25,7 @@ def main():
   # daita loader
   print('\n--- load dataset ---')
   dataset = dataset_unpair(opts)
-  N = len(dataset)
+  N = ceil(len(dataset) / opts.batch_size)
   train_loader = torch.utils.data.DataLoader(dataset, batch_size=opts.batch_size, shuffle=True, num_workers=opts.nThreads)
 
   # model
