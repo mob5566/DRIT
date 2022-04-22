@@ -33,7 +33,6 @@ class TrainOptions():
     self.parser.add_argument('--model_save_freq', type=int, default=10, help='freq (epoch) of saving models')
     self.parser.add_argument('--display_img_freq', type=int, default=5, help='freq (epoch) of display')
     self.parser.add_argument('--display_log_freq', type=int, default=10, help='freq (iteration) of display')
-    self.parser.add_argument('--log_freq', type=int, default=10, help='freq (iterations) of printing log')
     self.parser.add_argument('--no_display_img', action='store_true', help='specified if no dispaly')
 
     # training related

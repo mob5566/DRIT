@@ -24,6 +24,7 @@ def main():
   # daita loader
   print('\n--- load dataset ---')
   dataset = dataset_unpair(opts)
+  N = len(dataset)
   train_loader = torch.utils.data.DataLoader(dataset, batch_size=opts.batch_size, shuffle=True, num_workers=opts.nThreads)
 
   # model
@@ -47,7 +48,10 @@ def main():
   print('\n--- train ---')
   max_it = opts.max_it
   for ep in tqdm(range(ep0, opts.n_ep), unit='epoch'):
-    for it, data in enumerate(train_loader):
+    lr = model.gen_opt.param_groups[0]["lr"]
+
+    for it, data in tqdm(enumerate(train_loader), total=N,
+                         desc=f'Epoch {ep} (lr: {lr:08f})'):
       if opts.aux_masks:
         images_a, masks_a, images_b = data
       else:
@@ -74,9 +78,6 @@ def main():
       # save to display file
       if not opts.no_display_img:
         saver.write_display_log(total_it, model)
-
-      if (total_it + 1) % opts.log_freq == 0:
-        print('total_it: %d (ep %d, it %d), lr %08f' % (total_it + 1, ep, it, model.gen_opt.param_groups[0]['lr']))
 
       total_it += 1
       if total_it >= max_it or early_stop:
