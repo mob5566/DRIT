@@ -13,6 +13,7 @@ class TrainOptions():
     self.parser.add_argument('--zs_dim', type=int, default=8, help='the dimension the of the style space')
     self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
     self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
+    self.parser.add_argument('--aux_cls_weights', nargs='*', type=float, default=None, help='weights of classes for loss function')
 
     # data loader related
     self.parser.add_argument('--dataroot', type=str, required=True, help='path of data')

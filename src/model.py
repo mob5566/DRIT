@@ -15,7 +15,12 @@ class DRIT(nn.Module):
     self.aux_masks = opts.aux_masks
     self.bsize = opts.batch_size
     self.weight_decay = opts.weight_decay
+    self.aux_weights = None
     # self.opts = opts
+
+    if self.aux_masks and opts.aux_cls_weights is not None:
+        assert len(opts.aux_cls_weights) == opts.aux_n_classes, f'The length of auxiliary weights ({len(opts.aux_cls_weights)}) should be equal to the number of classes ({opts.aux_n_classes})'
+        self.aux_weights = torch.Tensor(opts.aux_cls_weights)
 
     # discriminators
     if opts.dis_scale > 1:
@@ -67,7 +72,7 @@ class DRIT(nn.Module):
 
     # Setup the loss function for training
     self.criterionL1 = torch.nn.L1Loss()
-    self.criterionCE = torch.nn.CrossEntropyLoss()
+    self.criterionCE = torch.nn.CrossEntropyLoss(weight=self.aux_weights)
 
   def initialize(self):
     self.disA.apply(networks.gaussian_weights_init)
@@ -108,6 +113,7 @@ class DRIT(nn.Module):
     self.gen.cuda(self.gpu)
     if self.aux_masks:
       self.unet_dec.cuda(self.gpu)
+    self.criterionCE.cuda(self.gpu)
 
   def get_z_random(self, batchSize, nz, random_type='gauss'):
     z = torch.randn(batchSize, nz).cuda(self.gpu)
