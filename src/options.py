@@ -62,6 +62,7 @@ class TestOptions():
     # data loader related
     self.parser.add_argument('--dataroot', type=str, required=True, help='path of data')
     self.parser.add_argument('--phase', type=str, default='test', help='phase for dataloading')
+    self.parser.add_argument('--batch_size', type=int, default=2, help='batch size')
     self.parser.add_argument('--resize_size', type=int, default=256, help='resized image size for training')
     self.parser.add_argument('--crop_size', type=int, default=216, help='cropped image size for training')
     self.parser.add_argument('--nThreads', type=int, default=4, help='for data loader')
@@ -69,8 +70,6 @@ class TestOptions():
     self.parser.add_argument('--input_dim_b', type=int, default=3, help='# of input channels for domain B')
     self.parser.add_argument('--a2b', type=int, default=1, help='translation direction, 1 for a2b, 0 for b2a')
     self.parser.add_argument('--no_flip', action='store_true', help='specified if no flipping')
-    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
-    self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
 
     # ouptput related
     self.parser.add_argument('--num', type=int, default=5, help='number of outputs per image')
@@ -82,6 +81,12 @@ class TestOptions():
     self.parser.add_argument('--no_ms', action='store_true', help='disable mode seeking regularization')
     self.parser.add_argument('--resume', type=str, required=True, help='specified the dir of saved models for resume the training')
     self.parser.add_argument('--gpu', type=int, default=0, help='gpu')
+    self.parser.add_argument('--zs_dim', type=int, default=8, help='the dimension the of the style space')
+    self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
+    self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
+    self.parser.add_argument('--aux_cls_weights', nargs='*', type=float, default=None, help='weights of classes for loss function')
+    self.parser.add_argument('--lr', type=float, default=0.0001, help='the initial learning rate')
+    self.parser.add_argument('--weight_decay', type=float, default=0.0001, help='the weight decay of the optimizer')
 
   def parse(self, arguments=None):
     self.opt = self.parser.parse_args(arguments)
