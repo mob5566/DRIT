@@ -388,7 +388,7 @@ class DRIT(nn.Module):
     # segmentation loss
     if self.aux_masks:
       loss_seg_a = self.criterionCE(self.real_A_mask, self.A_mask) * 10
-      loss_seg_a_recon = self.criterionCE(self.recon_A_mask, self.A_mask) * 1
+      loss_seg_a_recon = self.criterionCE(self.recon_A_mask, self.A_mask) * 10
 
     loss_G = loss_G_GAN_A + loss_G_GAN_B + \
              loss_G_GAN_Acontent + loss_G_GAN_Bcontent + \
