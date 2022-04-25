@@ -43,6 +43,7 @@ class dataset_unpair(data.Dataset):
   def __init__(self, opts):
     self.dataroot = opts.dataroot
     self.aux_masks = opts.aux_masks
+    self.pair_align = opts.pair_align
 
     # A
     images_A = os.listdir(os.path.join(self.dataroot, opts.phase + 'A'))
@@ -56,7 +57,9 @@ class dataset_unpair(data.Dataset):
 
     self.A_size = len(self.A)
     self.B_size = len(self.B)
-    self.dataset_size = max(self.A_size, self.B_size)
+    self.dataset_size = (max(self.A_size, self.B_size)
+                         if not self.pair_align
+                         else min(self.A_size, self.B_size))
     self.input_dim_A = opts.input_dim_a
     self.input_dim_B = opts.input_dim_b
 
@@ -73,14 +76,21 @@ class dataset_unpair(data.Dataset):
     return
 
   def __getitem__(self, index):
-    if self.dataset_size == self.A_size:
+    if self.dataset_size == self.A_size or self.pair_align:
+      if self.pair_align:
+        state = get_rng_state()
       if self.aux_masks:
         data_A, mask_A = self.load_img(self.A[index], self.input_dim_A,
                                        msk_name=self.Amask[index])
       else:
         data_A = self.load_img(self.A[index], self.input_dim_A)
 
-      data_B = self.load_img(self.B[random.randint(0, self.B_size - 1)], self.input_dim_B)
+      if self.pair_align:
+        set_rng_state(state)
+      data_B = self.load_img(self.B[random.randint(0, self.B_size - 1)
+                                    if not self.pair_align
+                                    else index],
+                             self.input_dim_B)
     else:
       if self.aux_masks:
         rnd_index = random.randint(0, self.A_size - 1)
