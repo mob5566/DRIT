@@ -815,6 +815,10 @@ class Up(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
         self.conv = DoubleConv(in_channels, out_channels)
 
+  def forward(self, x):
+    return self.conv(self.up(x))
+
+class UpSkipConn(Up):
   def forward(self, x1, x2):
     x1 = self.up(x1)
     # input is CHW
@@ -830,6 +834,20 @@ class Up(nn.Module):
     return self.conv(x)
 
 
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(in_channels, out_channels)
+        )
+
+    def forward(self, x):
+        return self.maxpool_conv(x)
+
+
 class OutConv(nn.Module):
   def __init__(self, in_channels, out_channels):
     super(OutConv, self).__init__()
@@ -840,25 +858,29 @@ class OutConv(nn.Module):
 
 
 class UNetDecoder(nn.Module):
-  def __init__(self, in_channels=256, n_classes=2):
+  def __init__(self, in_channels=256, n_classes=2, skip_conn=True):
     super().__init__()
+    self.skip_conn = skip_conn
+    self.up_cls = UpSkipConn if self.skip_conn else Up
 
     tch = in_channels
-    self.up1 = Up(tch * 2, tch // 2)
+    self.up1 = self.up_cls(tch + tch // 2 if self.skip_conn else tch, tch // 2)
     tch //= 2
-    self.up2 = Up(tch * 2, tch // 2)
-    tch //= 2
-    self.up3 = Up(tch * 2, tch)
+    self.up2 = self.up_cls(tch + tch // 2 if self.skip_conn else tch, tch)
     self.outc = OutConv(tch, n_classes)
 
-  def forward(self, x, scons):
+  def forward(self, x, scons=None):
+    if self.skip_conn:
       assert type(scons) == list, 'skip connections should be a list'
-      assert len(scons) >= 3, 'the length of skip connections should be ' \
+      assert len(scons) >= 2, 'the length of skip connections should be ' \
                               'greater or equal than 3'
 
       x = self.up1(x, scons[0])
       x = self.up2(x, scons[1])
-      x = self.up3(x, scons[2])
-      out = self.outc(x)
+    else:
+      x = self.up1(x)
+      x = self.up2(x)
 
-      return out
+    out = self.outc(x)
+
+    return out

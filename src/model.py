@@ -54,7 +54,8 @@ class DRIT(nn.Module):
 
     # segmentation decoders
     if self.aux_masks:
-      self.unet_dec = networks.UNetDecoder(n_classes=opts.aux_n_classes)
+      self.unet_dec = networks.UNetDecoder(n_classes=opts.aux_n_classes,
+                                           skip_conn=opts.aux_skip_conn)
 
     # optimizers
     self.disA_opt = torch.optim.Adam(self.disA.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
@@ -169,8 +170,8 @@ class DRIT(nn.Module):
 
     # get segmentation
     if self.aux_masks:
-      self.real_A_mask = self.unet_dec(self.z_content_a, self.z_content_a_outs[:3][::-1])
-      self.real_B_mask = self.unet_dec(self.z_content_b, self.z_content_b_outs[:3][::-1])
+      self.real_A_mask = self.unet_dec(self.z_content_a, self.z_content_a_outs[:2][::-1])
+      self.real_B_mask = self.unet_dec(self.z_content_b, self.z_content_b_outs[:2][::-1])
 
     # get encoded z_a
     if self.concat:
@@ -215,8 +216,8 @@ class DRIT(nn.Module):
 
     # get segmentation
     if self.aux_masks:
-      self.recon_A_mask = self.unet_dec(self.z_content_recon_a, self.z_content_recon_a_outs[:3][::-1])
-      self.recon_B_mask = self.unet_dec(self.z_content_recon_b, self.z_content_recon_b_outs[:3][::-1])
+      self.recon_A_mask = self.unet_dec(self.z_content_recon_a, self.z_content_recon_a_outs[:2][::-1])
+      self.recon_B_mask = self.unet_dec(self.z_content_recon_b, self.z_content_recon_b_outs[:2][::-1])
 
     # get reconstructed encoded z_a
     if self.concat:
