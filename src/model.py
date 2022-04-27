@@ -2,6 +2,8 @@ import networks
 import torch
 import torch.nn as nn
 
+from mmseg.models.losses import LovaszLoss, DiceLoss, FocalLoss
+
 class DRIT(nn.Module):
   def __init__(self, opts):
     super(DRIT, self).__init__()
@@ -74,7 +76,14 @@ class DRIT(nn.Module):
     # Setup the loss function for training
     self.criterionL1 = torch.nn.L1Loss()
     if self.aux_masks:
-      self.criterionCE = torch.nn.CrossEntropyLoss(weight=self.aux_weights)
+      if opts.aux_loss == 'lovazs':
+        self.criterionSeg = LovaszLoss(per_image=True, class_weight=self.aux_weights)
+      elif opts.aux_loss == 'focal':
+        self.criterionSeg = FocalLoss(class_weight=self.aux_weights)
+      elif opts.aux_loss == 'dice':
+        self.criterionSeg = DiceLoss(class_weight=self.aux_weights)
+      else:
+        self.criterionSeg = torch.nn.CrossEntropyLoss(weight=self.aux_weights)
 
   def initialize(self):
     self.disA.apply(networks.gaussian_weights_init)
@@ -115,7 +124,7 @@ class DRIT(nn.Module):
     self.gen.cuda(self.gpu)
     if self.aux_masks:
       self.unet_dec.cuda(self.gpu)
-      self.criterionCE.cuda(self.gpu)
+      self.criterionSeg.cuda(self.gpu)
 
   def get_z_random(self, batchSize, nz, random_type='gauss'):
     z = torch.randn(batchSize, nz).cuda(self.gpu)
@@ -391,8 +400,8 @@ class DRIT(nn.Module):
 
     # segmentation loss
     if self.aux_masks:
-      loss_seg_a = self.criterionCE(self.real_A_mask, self.A_mask) * 10
-      loss_seg_a_recon = self.criterionCE(self.recon_A_mask, self.A_mask) * 10
+      loss_seg_a = self.criterionSeg(self.real_A_mask, self.A_mask) * 10
+      loss_seg_a_recon = self.criterionSeg(self.recon_A_mask, self.A_mask) * 10
 
     loss_G = loss_G_GAN_A + loss_G_GAN_B + \
              loss_G_GAN_Acontent + loss_G_GAN_Bcontent + \
