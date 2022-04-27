@@ -4,6 +4,17 @@ import torch.nn as nn
 
 from mmseg.models.losses import LovaszLoss, DiceLoss, FocalLoss
 
+def _plot_mask(mask):
+  colormap = torch.Tensor([
+    [0xff, 0xff, 0xff], [0x56, 0xb8, 0x81], [0xf1, 0xf0, 0x75],
+    [0x8a, 0x8a, 0xcb], [0xfb, 0xb0, 0x3b], [0x3b, 0xb2, 0xd0],
+    [0xed, 0x64, 0x98], [0x40, 0x40, 0x40]
+  ]).cpu()
+  newmap = colormap[torch.argmax(mask, dim=1)].permute(0, 3, 1, 2)
+  newmap = (newmap / 255.0) * 2.0 - 1.0
+
+  return newmap
+
 class DRIT(nn.Module):
   def __init__(self, opts):
     super(DRIT, self).__init__()
@@ -246,10 +257,18 @@ class DRIT(nn.Module):
     self.fake_B_recon = self.gen.forward_b(self.z_content_recon_b, self.z_attr_recon_b)
 
     # for display
-    self.image_display = torch.cat((self.real_A_encoded[0:1].detach().cpu(), self.fake_B_encoded[0:1].detach().cpu(), \
-                                    self.fake_B_random[0:1].detach().cpu(), self.fake_AA_encoded[0:1].detach().cpu(), self.fake_A_recon[0:1].detach().cpu(), \
-                                    self.real_B_encoded[0:1].detach().cpu(), self.fake_A_encoded[0:1].detach().cpu(), \
-                                    self.fake_A_random[0:1].detach().cpu(), self.fake_BB_encoded[0:1].detach().cpu(), self.fake_B_recon[0:1].detach().cpu()), dim=0)
+    if not self.aux_masks:
+      self.image_display = torch.cat((self.real_A_encoded[0:1].detach().cpu(), self.fake_B_encoded[0:1].detach().cpu(),
+                                      self.fake_B_random[0:1].detach().cpu(), self.fake_AA_encoded[0:1].detach().cpu(), self.fake_A_recon[0:1].detach().cpu(),
+                                      self.real_B_encoded[0:1].detach().cpu(), self.fake_A_encoded[0:1].detach().cpu(),
+                                      self.fake_A_random[0:1].detach().cpu(), self.fake_BB_encoded[0:1].detach().cpu(), self.fake_B_recon[0:1].detach().cpu()), dim=0)
+    else:
+      self.A_mask_display = _plot_mask(self.real_A_mask[:1].detach().cpu())
+      self.B_mask_display = _plot_mask(self.real_B_mask[:1].detach().cpu())
+      self.image_display = torch.cat((self.A_mask_display.detach().cpu(), self.real_A_encoded[0:1].detach().cpu(), self.fake_B_encoded[0:1].detach().cpu(),
+                                      self.fake_B_random[0:1].detach().cpu(), self.fake_AA_encoded[0:1].detach().cpu(), self.fake_A_recon[0:1].detach().cpu(),
+                                      self.B_mask_display.detach().cpu(), self.real_B_encoded[0:1].detach().cpu(), self.fake_A_encoded[0:1].detach().cpu(),
+                                      self.fake_A_random[0:1].detach().cpu(), self.fake_BB_encoded[0:1].detach().cpu(), self.fake_B_recon[0:1].detach().cpu()), dim=0)
 
     # for latent regression
     if self.concat:
@@ -580,18 +599,26 @@ class DRIT(nn.Module):
     return
 
   def assemble_outputs(self):
-    images_a = self.normalize_image(self.real_A_encoded).detach()
-    images_b = self.normalize_image(self.real_B_encoded).detach()
-    images_a1 = self.normalize_image(self.fake_A_encoded).detach()
-    images_a2 = self.normalize_image(self.fake_A_random).detach()
-    images_a3 = self.normalize_image(self.fake_A_recon).detach()
-    images_a4 = self.normalize_image(self.fake_AA_encoded).detach()
-    images_b1 = self.normalize_image(self.fake_B_encoded).detach()
-    images_b2 = self.normalize_image(self.fake_B_random).detach()
-    images_b3 = self.normalize_image(self.fake_B_recon).detach()
-    images_b4 = self.normalize_image(self.fake_BB_encoded).detach()
-    row1 = torch.cat((images_a[0:1, ::], images_b1[0:1, ::], images_b2[0:1, ::], images_a4[0:1, ::], images_a3[0:1, ::]),3)
-    row2 = torch.cat((images_b[0:1, ::], images_a1[0:1, ::], images_a2[0:1, ::], images_b4[0:1, ::], images_b3[0:1, ::]),3)
+    images_a = self.normalize_image(self.real_A_encoded).detach().cpu()
+    images_b = self.normalize_image(self.real_B_encoded).detach().cpu()
+    images_a1 = self.normalize_image(self.fake_A_encoded).detach().cpu()
+    images_a2 = self.normalize_image(self.fake_A_random).detach().cpu()
+    images_a3 = self.normalize_image(self.fake_A_recon).detach().cpu()
+    images_a4 = self.normalize_image(self.fake_AA_encoded).detach().cpu()
+    images_b1 = self.normalize_image(self.fake_B_encoded).detach().cpu()
+    images_b2 = self.normalize_image(self.fake_B_random).detach().cpu()
+    images_b3 = self.normalize_image(self.fake_B_recon).detach().cpu()
+    images_b4 = self.normalize_image(self.fake_BB_encoded).detach().cpu()
+
+    if not self.aux_masks:
+      row1 = torch.cat((images_a[0:1, ::], images_b1[0:1, ::], images_b2[0:1, ::], images_a4[0:1, ::], images_a3[0:1, ::]),3)
+      row2 = torch.cat((images_b[0:1, ::], images_a1[0:1, ::], images_a2[0:1, ::], images_b4[0:1, ::], images_b3[0:1, ::]),3)
+    else:
+      images_a0 = self.normalize_image(self.A_mask_display).detach().cpu()
+      images_b0 = self.normalize_image(self.B_mask_display).detach().cpu()
+      row1 = torch.cat((images_a0[0:1, ::], images_a[0:1, ::], images_b1[0:1, ::], images_b2[0:1, ::], images_a4[0:1, ::], images_a3[0:1, ::]),3)
+      row2 = torch.cat((images_b0[0:1, ::], images_b[0:1, ::], images_a1[0:1, ::], images_a2[0:1, ::], images_b4[0:1, ::], images_b3[0:1, ::]),3)
+
     return torch.cat((row1,row2),2)
 
   def normalize_image(self, x):
