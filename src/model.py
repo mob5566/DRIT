@@ -73,7 +73,8 @@ class DRIT(nn.Module):
 
     # Setup the loss function for training
     self.criterionL1 = torch.nn.L1Loss()
-    self.criterionCE = torch.nn.CrossEntropyLoss(weight=self.aux_weights)
+    if self.aux_masks:
+      self.criterionCE = torch.nn.CrossEntropyLoss(weight=self.aux_weights)
 
   def initialize(self):
     self.disA.apply(networks.gaussian_weights_init)
@@ -114,7 +115,7 @@ class DRIT(nn.Module):
     self.gen.cuda(self.gpu)
     if self.aux_masks:
       self.unet_dec.cuda(self.gpu)
-    self.criterionCE.cuda(self.gpu)
+      self.criterionCE.cuda(self.gpu)
 
   def get_z_random(self, batchSize, nz, random_type='gauss'):
     z = torch.randn(batchSize, nz).cuda(self.gpu)
