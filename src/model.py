@@ -20,8 +20,9 @@ class DRIT(nn.Module):
     super(DRIT, self).__init__()
 
     # parameters
-    lr = opts.lr
-    lr_dcontent = lr / 2.5
+    gen_lr = opts.gen_lr
+    dis_lr = opts.dis_lr
+    lr_dcontent = opts.dcont_lr
     self.nz = opts.zs_dim
     self.concat = opts.concat
     self.no_ms = opts.no_ms
@@ -71,18 +72,18 @@ class DRIT(nn.Module):
                                            skip_conn=opts.aux_skip_conn)
 
     # optimizers
-    self.disA_opt = torch.optim.Adam(self.disA.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.disB_opt = torch.optim.Adam(self.disB.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.disA2_opt = torch.optim.Adam(self.disA2.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.disB2_opt = torch.optim.Adam(self.disB2.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.disA_opt = torch.optim.Adam(self.disA.parameters(), lr=dis_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.disB_opt = torch.optim.Adam(self.disB.parameters(), lr=dis_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.disA2_opt = torch.optim.Adam(self.disA2.parameters(), lr=dis_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.disB2_opt = torch.optim.Adam(self.disB2.parameters(), lr=dis_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
     self.disContent_opt = torch.optim.Adam(self.disContent.parameters(), lr=lr_dcontent, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.enc_c_opt = torch.optim.Adam(self.enc_c.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.enc_c_shared_opt = torch.optim.Adam(self.enc_c_shared.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.enc_a_opt = torch.optim.Adam(self.enc_a.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
-    self.gen_opt = torch.optim.Adam(self.gen.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.enc_c_opt = torch.optim.Adam(self.enc_c.parameters(), lr=gen_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.enc_c_shared_opt = torch.optim.Adam(self.enc_c_shared.parameters(), lr=gen_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.enc_a_opt = torch.optim.Adam(self.enc_a.parameters(), lr=gen_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+    self.gen_opt = torch.optim.Adam(self.gen.parameters(), lr=gen_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
 
     if self.aux_masks:
-      self.unet_dec_opt = torch.optim.Adam(self.unet_dec.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
+      self.unet_dec_opt = torch.optim.Adam(self.unet_dec.parameters(), lr=gen_lr, betas=(0.5, 0.999), weight_decay=self.weight_decay)
 
     # Setup the loss function for training
     self.criterionL1 = torch.nn.L1Loss()

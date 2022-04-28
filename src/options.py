@@ -41,7 +41,9 @@ class TrainOptions():
 
     # training related
     self.parser.add_argument('--lr_policy', type=str, default='lambda', help='type of learn rate decay')
-    self.parser.add_argument('--lr', type=float, default=0.0001, help='the initial learning rate')
+    self.parser.add_argument('--gen_lr', type=float, default=0.0001, help='the initial learning rate for generator')
+    self.parser.add_argument('--dis_lr', type=float, default=0.00005, help='the initial learning rate for discriminator')
+    self.parser.add_argument('--dcont_lr', type=float, default=0.00004, help='the initial learning rate for discriminator of contents')
     self.parser.add_argument('--n_ep', type=int, default=500, help='number of epochs') # 400 * d_iter
     self.parser.add_argument('--n_ep_decay', type=int, default=0, help='epoch start decay learning rate, set -1 if no decay') # 200 * d_iter
     self.parser.add_argument('--weight_decay', type=float, default=0.0001, help='the weight decay of the optimizer')
