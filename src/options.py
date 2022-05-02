@@ -92,7 +92,9 @@ class TestOptions():
     self.parser.add_argument('--aux_skip_conn', action='store_true', help='specified if auxiliary masks have skip connections')
     self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
     self.parser.add_argument('--aux_cls_weights', nargs='*', type=float, default=None, help='weights of classes for loss function')
-    self.parser.add_argument('--lr', type=float, default=0.0001, help='the initial learning rate')
+    self.parser.add_argument('--gen_lr', type=float, default=0.0001, help='the initial learning rate for generator')
+    self.parser.add_argument('--dis_lr', type=float, default=0.00005, help='the initial learning rate for discriminator')
+    self.parser.add_argument('--dcont_lr', type=float, default=0.00004, help='the initial learning rate for discriminator of contents')
     self.parser.add_argument('--weight_decay', type=float, default=0.0001, help='the weight decay of the optimizer')
 
   def parse(self, arguments=None):
