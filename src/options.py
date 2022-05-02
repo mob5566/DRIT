@@ -89,6 +89,7 @@ class TestOptions():
     self.parser.add_argument('--gpu', type=int, default=0, help='gpu')
     self.parser.add_argument('--zs_dim', type=int, default=8, help='the dimension the of the style space')
     self.parser.add_argument('--aux_masks', action='store_true', help='specified if auxiliary masks are provided')
+    self.parser.add_argument('--aux_loss', type=str, default='ce', help='loss function of the segmentation decoder', choices=['ce', 'lovazs', 'focal', 'dice'])
     self.parser.add_argument('--aux_skip_conn', action='store_true', help='specified if auxiliary masks have skip connections')
     self.parser.add_argument('--aux_n_classes', type=int, default=2, help='number of classes for segmentation')
     self.parser.add_argument('--aux_cls_weights', nargs='*', type=float, default=None, help='weights of classes for loss function')
